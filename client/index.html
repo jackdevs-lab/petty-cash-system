@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Petty Cash System - Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/
+6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+<!-- Navigation -->
+<nav class="bg-white shadow-sm border-b border-gray-200">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between h-16">
+<div class="flex items-center">
+<div class="flex-shrink-0 flex items-center">
+<i class="fas fa-hospital text-blue-600 text-2xl mr-3"></i>
+<h1 class="text-xl font-bold text-gray-900">Hospital Petty Cash System</h1>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<a href="/" class="px-3 py-2 rounded-md text-sm font-medium text-white bg-blue-600">
+<i class="fas fa-home mr-1"></i> Dashboard
+</a>
+<a href="/reports.html" class="px-3 py-2 rounded-md text-sm fontmedium text-gray-700 hover:text-gray-900 hover:bg-gray-100">
+<i class="fas fa-chart-bar mr-1"></i> Reports
+</a>
+<div id="system-status-badge" class="px-3 py-1 rounded-full textsm font-medium">
+<!-- Filled by JavaScript -->
+</div>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8"><!-- System Lock Banner (shown when transaction is open) -->
+<div id="lock-banner" class="hidden mb-6 bg-yellow-50 border-l-4 border-yellow-400 w-400 p-4">
+<div class="flex">
+<div class="flex-shrink-0">
+<i class="fas fa-lock text-yellow-400 text-xl"></i>
+</div>
+<div class="ml-3">
+<p class="text-sm text-yellow-700">
+<strong>System Locked:</strong> There is an open transaction 
+that requires classification.
+<a href="/classify.html" class="font-medium underline text-yellow-700 hover:text-yellow-600 ml-2">
+Click here to classify
+</a>
+</p>
+</div>
+</div>
+</div>
+<!-- Wallet Summary Card -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="bg-white overflow-hidden shadow rounded-lg">
+<div class="p-5">
+<div class="flex items-center">
+<div class="flex-shrink-0">
+<i class="fas fa-wallet text-3xl text-blue-600"></i>
+</div>
+<div class="ml-5 w-0 flex-1">
+<dl>
+<dt class="text-sm font-medium text-gray-500 truncate">
+
+Current Balance
+</dt>
+<dd class="text-3xl font-bold text-gray-900" id="current-balance">
+Loading...
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="bg-gray-50 px-5 py-3">
+<div class="text-sm text-gray-600">
+<i class="fas fa-sync-alt mr-1"></i>
+<span id="last-updated">Last updated: --</span>
+</div> </div>
+            </div>
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exchange-alt text-3xl text-green-600"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Transactions Today
+                                </dt>
+                                <dd class="text-3xl font-bold text-gray-900" id="today-count">
+                                    0
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm text-gray-600">
+                        <i class="fas fa-calendar-day mr-1"></i>
+                        <span id="today-date">Today: --</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-chart-pie text-3xl text-purple-600"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    This Month's Expenses
+                                </dt>
+                                <dd class="text-3xl font-bold text-gray-900" id="month-expenses">
+                                    Ksh 0</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="bg-gray-50 px-5 py-3">
+<div class="text-sm text-gray-600">
+<i class="fas fa-calendar-alt mr-1"></i>
+<span id="current-month">Month: --</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<button id="btn-mpesa-sync" 
+class="action-btn bg-blue-600 hover:bg-blue-700 text-white">
+<i class="fas fa-sync mr-2"></i>
+Sync from M-Pesa
+</button>
+<button id="btn-manual-entry" 
+class="action-btn bg-green-600 hover:bg-green-700 text-white">
+<i class="fas fa-plus-circle mr-2"></i>
+Manual Entry
+</button>
+<button id="btn-view-reports" 
+class="action-btn bg-purple-600 hover:bg-purple-700 text-white">
+<i class="fas fa-chart-bar mr-2"></i>
+View Reports
+</button>
+<button id="btn-system-check" 
+class="action-btn bg-gray-600 hover:bg-gray-700 text-white">
+<i class="fas fa-cogs mr-2"></i>
+System Check
+</button>
+</div>
+<!-- Recent Transactions -->
+<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+<h3 class="text-lg leading-6 font-medium text-gray-900">
+Recent Transactions
+</h3>
+<p class="mt-1 max-w-2xl text-sm text-gray-500">
+Last 10 M-Pesa transactions
+</p></div>
+            <div class="px-4 py-5 sm:p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Date & Time
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Transaction ID
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Type
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Amount
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-body" class="divide-y divide-gray-200">
+                            <!-- Filled by JavaScript -->
+                            <tr>
+                                <td colspan="6" class="px-3 py-4 text-center text-gray-500">
+                                    Loading transactions...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-center">
+                    <a href="/reports.html" class="text-sm text-blue-600 hover:text-blue-900 font-medium"> View all transactions →
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- M-Pesa Sync Modal -->
+        <div id="mpesa-sync-modal" class="modal hidden">
+            <div class="modal-content max-w-lg">
+                <div class="modal-header">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        <i class="fas fa-sync mr-2"></i>
+                        Sync from M-Pesa
+                    </h3>
+                    <button type="button" class="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                M-Pesa Transaction Details
+                            </label>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Previous Balance
+                                    </label>
+                                    <input type="number" step="0.01" 
+                                           class="input-field"
+                                           id="prev-balance" 
+                                           placeholder="e.g., 10000.00">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        New Balance
+                                    </label>
+                                    <input type="number" step="0.01" 
+                                           class="input-field"
+                                           id="new-balance" 
+                                           placeholder="e.g., 8000.00">
+                                </div> </div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    M-Pesa Transaction ID
+                                </label>
+                                <input type="text" 
+                                       class="input-field"
+                                       id="mpesa-id" 
+                                       placeholder="e.g., ODE1234567">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Transaction Date
+                                </label>
+                                <input type="datetime-local" 
+                                       class="input-field"
+                                       id="transaction-date">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    SMS Text (Optional)
+                                </label>
+                                <textarea class="input-field h-32" 
+                                          id="sms-text"
+                                          placeholder="Paste M-Pesa SMS here..."></textarea>
+                            </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-close">
+                        Cancel
+                    </button>
+                    <button type="button" id="btn-process-transaction" 
+                            class="btn-primary">
+                        <i class="fas fa-calculator mr-2"></i>
+                        Process Transaction
+                    </button>
+                </div>
+            </div></div>
+</main>
+<!-- Footer -->
+<footer class="bg-white border-t border-gray-200 mt-8">
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+<div class="flex flex-col md:flex-row justify-between items-center">
+<div class="text-sm text-gray-600">
+<p>© 2024 Hospital Petty Cash System. For audit use only.</p>
+<p class="mt-1">System Status: <span id="footer-status" class="fo
+nt-medium">Checking...</span></p>
+</div>
+<div class="mt-4 md:mt-0">
+<span class="text-sm text-gray-500">
+Last system check: <span id="last-check">--</span>
+</span>
+</div>
+</div>
+</div>
+</footer>
+<script src="js/api.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
