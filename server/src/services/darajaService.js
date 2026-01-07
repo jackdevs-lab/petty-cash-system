@@ -17,8 +17,7 @@ async getAccessToken() {
 try {
 const auth = Buffer.from(`${this.consumerKey}:${this.consumerSecret}`).toString('base64');
             
-            const response = await axios.get(`${this.baseURL}/oauth/v1/generate?grant
-_type=client_credentials`, {
+            const response = await axios.get(`${this.baseURL}/oauth/v1/generate?grant_type=client_credentials`, {
                 headers: {
                     'Authorization': `Basic ${auth}`
                 }
@@ -26,8 +25,7 @@ _type=client_credentials`, {
             
             return response.data.access_token;
         } catch (error) {
-            console.error('Error getting Daraja access token:', error.response?.data 
-|| error.message);
+            console.error('Error getting Daraja access token:', error.response?.data || error.message);
             throw new Error('Failed to authenticate with M-Pesa Daraja API');
         }
     }
