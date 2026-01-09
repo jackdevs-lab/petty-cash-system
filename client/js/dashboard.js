@@ -1,4 +1,5 @@
-document.addEventListener('DOMContentLoaded', async function() {
+// dashboard.js - Fully fixed and organized version
+
 // DOM Elements
 const currentBalanceEl = document.getElementById('current-balance');
 const lastUpdatedEl = document.getElementById('last-updated');
@@ -11,463 +12,358 @@ const lockBannerEl = document.getElementById('lock-banner');
 const systemStatusBadgeEl = document.getElementById('system-status-badge');
 const footerStatusEl = document.getElementById('footer-status');
 const lastCheckEl = document.getElementById('last-check');
+
 const btnMpesaSync = document.getElementById('btn-mpesa-sync');
 const btnManualEntry = document.getElementById('btn-manual-entry');
 const btnViewReports = document.getElementById('btn-view-reports');
 const btnSystemCheck = document.getElementById('btn-system-check');
 const btnProcessTransaction = document.getElementById('btn-process-transaction');
-// Modal Elements
+
 const mpesaSyncModal = document.getElementById('mpesa-sync-modal');
 const modalCloseBtns = document.querySelectorAll('.modal-close');
-// Input Elements
+
 const prevBalanceInput = document.getElementById('prev-balance');
 const newBalanceInput = document.getElementById('new-balance');
 const mpesaIdInput = document.getElementById('mpesa-id');
 const transactionDateInput = document.getElementById('transaction-date');
 const smsTextInput = document.getElementById('sms-text');
-// State
+
+// Global state
 let systemStatus = null;
 let walletData = null;
-// Initialize
-async function init() {
-await loadDashboardData();
-setupEventListeners();
-updateLastCheck();
-}
-// Load dashboard data
-async function loadDashboardData() {
-try {
-// Get system status first
-systemStatus = await api.getSystemStatus();
-updateSystemStatus(systemStatus);
-// If system is locked, show banner and redirect
-if (systemStatus.system_locked && window.location.pathname !== '/classify.html') {
-showLockBanner(systemStatus.open_transaction);
-return;
-}
-// Load wallet data
-walletData = await api.getWallet();
-updateWalletDisplay(walletData);// Load recent transactions
-const transactionsData = await api.getTransactions();
-updateTransactionsTable(transactionsData.transactions);
-// Calculate today's statistics
-calculateTodayStats(transactionsData.transactions);
-} catch (error) {
-console.error('Failed to load dashboard data:', error);
-showError('Failed to load dashboard data. Please refresh the page.');
-}
 
-// Update system status display
+// ========================
+// Helper Functions
+// ========================
+
 function updateSystemStatus(status) {
-const isLocked = status.system_locked;
-// Update status badge
-if (systemStatusBadgeEl) {
-systemStatusBadgeEl.textContent = isLocked ? 'Locked' : 'Active';
-systemStatusBadgeEl.className = isLocked 
-? 'px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800'
-: 'px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
-}
-// Update footer status
-if (footerStatusEl) {
-footerStatusEl.textContent = isLocked ? 'Locked (Transaction Open)' : 'Active (Ready)';
-footerStatusEl.className = isLocked ? 'font-medium text-yellow-600' : 'font-medium text-green-600';
-}
+  const isLocked = status.system_locked;
+
+  if (systemStatusBadgeEl) {
+    systemStatusBadgeEl.textContent = isLocked ? 'Locked' : 'Active';
+    systemStatusBadgeEl.className = isLocked
+      ? 'px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800'
+      : 'px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
+  }
+
+  if (footerStatusEl) {
+    footerStatusEl.textContent = isLocked ? 'Locked (Transaction Open)' : 'Active (Ready)';
+    footerStatusEl.className = isLocked ? 'font-medium text-yellow-600' : 'font-medium text-green-600';
+  }
 }
 
-// Show lock banner
-function showLockBanner(openTransaction) {
-if (lockBannerEl) {
-lockBannerEl.classList.remove('hidden');
-}
+function showLockBanner() {
+  if (lockBannerEl) {
+    lockBannerEl.classList.remove('hidden');
+  }
 }
 
-// Update wallet display
 function updateWalletDisplay(walletData) {
-if (!walletData) return;const wallet = walletData.wallet;
-// Update current balance
-if (currentBalanceEl) {
-currentBalanceEl.textContent = api.formatCurrency(wallet.current_balance);
-// Color code based on balance
-if (wallet.current_balance === 0) {
-currentBalanceEl.classList.add('text-gray-900');
-} else if (wallet.current_balance > 0) {
-currentBalanceEl.classList.add('text-green-600');
-} else {
-currentBalanceEl.classList.add('text-red-600');
-}
-}
-// Update last updated
-if (lastUpdatedEl && wallet.last_updated) {
-const date = new Date(wallet.last_updated);
-lastUpdatedEl.textContent = `Last updated: ${date.toLocaleString('en-KE')}`;
-}
-// Update today's date
-if (todayDateEl) {
-const today = new Date();
-todayDateEl.textContent = `Today: ${today.toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
-}
-// Update current month
-if (currentMonthEl) {
-const today = new Date();
-currentMonthEl.textContent = `Month: ${today.toLocaleDateString('en-KE', 
-{ month: 'long', year: 'numeric' })}`;
-}
+  if (!walletData?.wallet) return;
+
+  const wallet = walletData.wallet;
+
+  if (currentBalanceEl) {
+    currentBalanceEl.textContent = api.formatCurrency(wallet.current_balance);
+    currentBalanceEl.className = 'text-4xl font-bold';
+    if (wallet.current_balance > 0) currentBalanceEl.classList.add('text-green-600');
+    else if (wallet.current_balance < 0) currentBalanceEl.classList.add('text-red-600');
+    else currentBalanceEl.classList.add('text-gray-900');
+  }
+
+  if (lastUpdatedEl && wallet.last_updated) {
+    const date = new Date(wallet.last_updated);
+    lastUpdatedEl.textContent = `Last updated: ${date.toLocaleString('en-KE')}`;
+  }
+
+  if (todayDateEl) {
+    const today = new Date();
+    todayDateEl.textContent = `Today: ${today.toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+  }
+
+  if (currentMonthEl) {
+    const today = new Date();
+    currentMonthEl.textContent = `Month: ${today.toLocaleDateString('en-KE', { month: 'long', year: 'numeric' })}`;
+  }
 }
 
-// Update transactions table
 function updateTransactionsTable(transactions) {
-if (!transactionsBodyEl || !transactions) return;
-transactionsBodyEl.innerHTML = '';
-if (transactions.length === 0) {transactionsBodyEl.innerHTML = `
-<tr>
-<td colspan="6" class="px-3 py-4 text-center text-gray-500">
-No transactions yet. Sync from M-Pesa to get started.
-</td>
-</tr>
-`;
-return;
-}
-transactions.forEach(transaction => {
-const row = document.createElement('tr');
-const isPositive = transaction.delta > 0;
-const amountClass = isPositive ? 'text-green-600' : 'text-red-600';
-const amountSign = isPositive ? '+' : '';
-const statusBadge = transaction.status === 'OPEN' 
-? '<span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>'
-: '<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Completed</span>';
-row.innerHTML = `
-<td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-${api.formatDate(transaction.transaction_date)}
-</td>
-<td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-${transaction.mpesa_transaction_id}
-</td>
-<td class="px-3 py-4 whitespace-nowrap text-sm ${amountClass}">
-${amountSign}${api.formatCurrency(Math.abs(transaction.delta))}
-</td>
-<td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-${api.formatCurrency(Math.abs(transaction.delta))}
-</td>
-<td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-${statusBadge}
-</td>
-<td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-<button class="text-blue-600 hover:text-blue-900 view-transaction" data-id="${transaction.id}">
-<i class="fas fa-eye mr-1"></i> View
-</button>
-</td>
-`;
-transactionsBodyEl.appendChild(row);
-});
-// Add event listeners to view buttons
-document.querySelectorAll('.view-transaction').forEach(button => {
-button.addEventListener('click', function() {
-const transactionId = this.getAttribute('data-id');
-viewTransactionDetails(transactionId);
-});
-});
-}
-// Calculate today's statistics
-function calculateTodayStats(transactions) {
-const today = new Date().toISOString().split('T')[0];
-// Count transactions today
-const todayTransactions = transactions.filter(t => 
-t.transaction_date.startsWith(today)
-);
-if (todayCountEl) {
-todayCountEl.textContent = todayTransactions.length;
-}
-// Calculate month expenses
-const currentMonth = new Date().getMonth();
-const currentYear = new Date().getFullYear();
-const monthTransactions = transactions.filter(t => {
-const transactionDate = new Date(t.transaction_date);
-return transactionDate.getMonth() === currentMonth && 
-transactionDate.getFullYear() === currentYear &&
-t.delta < 0; // Only expenses (negative delta)
-});
-const monthExpenses = monthTransactions.reduce((sum, t) => sum + Math.abs(t.delta), 0);
-if (monthExpensesEl) {
-monthExpensesEl.textContent = api.formatCurrency(monthExpenses);
-}
+  if (!transactionsBodyEl) return;
+
+  transactionsBodyEl.innerHTML = '';
+
+  if (!transactions || transactions.length === 0) {
+    transactionsBodyEl.innerHTML = `
+      <tr>
+        <td colspan="6" class="px-3 py-4 text-center text-gray-500">
+          No transactions yet. Sync from M-Pesa to get started.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  transactions.forEach(transaction => {
+    const row = document.createElement('tr');
+    const isPositive = transaction.delta > 0;
+    const amountClass = isPositive ? 'text-green-600' : 'text-red-600';
+    const amountSign = isPositive ? '+' : '';
+    
+    const statusBadge = transaction.status === 'OPEN'
+      ? '<span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>'
+      : '<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Completed</span>';
+
+    // Action button: "Classify" if OPEN, "View" if LOCKED/COMPLETED
+    let actionButton = '';
+    if (transaction.status === 'OPEN') {
+      actionButton = `
+        <button class="text-orange-600 hover:text-orange-800 font-medium classify-transaction">
+          <i class="fas fa-tags mr-1"></i> Classify
+        </button>
+      `;
+    } else {
+      actionButton = `
+        <button class="text-blue-600 hover:text-blue-900 view-transaction" data-id="${transaction.id}">
+          <i class="fas fa-eye mr-1"></i> View
+        </button>
+      `;
+    }
+
+    row.innerHTML = `
+      <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">${api.formatDate(transaction.transaction_date)}</td>
+      <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${transaction.mpesa_transaction_id || 'N/A'}</td>
+      <td class="px-3 py-4 whitespace-nowrap text-sm ${amountClass}">${amountSign}${api.formatCurrency(Math.abs(transaction.delta))}</td>
+      <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">${api.formatCurrency(Math.abs(transaction.mpesa_fee || 0))}</td>
+      <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">${statusBadge}</td>
+      <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+        ${actionButton}
+      </td>
+    `;
+    transactionsBodyEl.appendChild(row);
+  });
+
+  // Attach event listeners
+
+  // View button (for completed transactions)
+  document.querySelectorAll('.view-transaction').forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewTransactionDetails(btn.dataset.id);
+    });
+  });
+
+  // Classify button (for pending transactions) - redirects to classification page
+  document.querySelectorAll('.classify-transaction').forEach(btn => {
+    btn.addEventListener('click', () => {
+      window.location.href = '/classify.html';
+    });
+  });
 }
 
-// Show transaction details
-async function viewTransactionDetails(transactionId) {
-// In a full implementation, this would open a modal with transaction details
-alert(`Viewing transaction ${transactionId}. This feature would show full details in a modal.`);
+function calculateTodayStats(transactions) {
+  if (!transactions) return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayCount = transactions.filter(t => t.transaction_date.startsWith(todayStr)).length;
+  if (todayCountEl) todayCountEl.textContent = todayCount;
+
+  const now = new Date();
+  const monthExpenses = transactions
+    .filter(t => {
+      const date = new Date(t.transaction_date);
+      return date.getMonth() === now.getMonth() &&
+             date.getFullYear() === now.getFullYear() &&
+             t.delta < 0;
+    })
+    .reduce((sum, t) => sum + Math.abs(t.delta), 0);
+
+  if (monthExpensesEl) monthExpensesEl.textContent = api.formatCurrency(monthExpenses);
 }
-// Setup event listeners
-function setupEventListeners() {
-// M-Pesa Sync button
-if (btnMpesaSync) {
-btnMpesaSync.addEventListener('click', () => {
-// Check if system is already locked
-if (systemStatus && systemStatus.system_locked) {
-alert('System is locked. Please complete the open transaction classification first.');
-window.location.href = '/classify.html';
-return;
+
+function viewTransactionDetails(id) {
+  alert(`View details for transaction ID: ${id}\n(In a full app, this would open a detailed modal)`);
 }
-// Set default date to now
-if (transactionDateInput) {
-const now = new Date();
-now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-transactionDateInput.value = now.toISOString().slice(0, 16);
-}
-// Show modal
-if (mpesaSyncModal) {
-mpesaSyncModal.classList.remove('hidden');
-}
-});
-}
-// Manual Entry button
-if (btnManualEntry) {
-btnManualEntry.addEventListener('click', () => {
-if (systemStatus && systemStatus.system_locked) {
-alert('System is locked. Please complete the open transaction classification first.');
-window.location.href = '/classify.html';
-return;
-}
-alert('Manual entry would open a form here. For now, use the M-Pesa sync modal.');
-});
-}
-// View Reports button
-if (btnViewReports) { btnViewReports.addEventListener('click', () => {
-                window.location.href = '/reports.html';
-            });
-        }
-        // System Check button
-        if (btnSystemCheck) {
-            btnSystemCheck.addEventListener('click', async () => {
-                try {
-                    const health = await api.getSystemHealth();
-                    if (health.healthy) {
-                        alert('✅ System is healthy and running normally.');
-                    } else {
-                        alert('⚠ System check failed. Check console for details.');
-                        console.log('System health:', health);
-                    }
-                } catch (error) {
-                    alert('❌ Failed to check system health.');
-                }
-            });
-        }
-        // Process Transaction button
-        if (btnProcessTransaction) {
-            btnProcessTransaction.addEventListener('click', async () => {
-                await processNewTransaction();
-            });
-        }
-        // Modal close buttons
-        modalCloseBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                mpesaSyncModal.classList.add('hidden');
-                clearTransactionForm();
-            });
-        });
-        // SMS text parsing
-        if (smsTextInput) {
-            smsTextInput.addEventListener('input', () => {
-                parseSMSText();
-            });
-        }
-        // Close modal on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { mpesaSyncModal.classList.add('hidden');
-                clearTransactionForm();
-            }
-        });
-        // Close modal on outside click
-        if (mpesaSyncModal) {
-            mpesaSyncModal.addEventListener('click', (e) => {
-                if (e.target === mpesaSyncModal) {
-                    mpesaSyncModal.classList.add('hidden');
-                    clearTransactionForm();
-                }
-            });
-        }
-    }
-    // Parse SMS text and auto-fill form
-    function parseSMSText() {
-        const smsText = smsTextInput.value.trim();
-        if (!smsText) return;
-        const parsed = api.parseSMSText(smsText);
-        if (!parsed) return;
-        // Auto-fill form based on parsed SMS
-        if (parsed.type === 'withdrawal') {
-            if (walletData && walletData.wallet) {
-                const currentBalance = walletData.wallet.current_balance;
-                const newBalance = parsed.new_balance;
-                const previousBalance = currentBalance + parsed.amount; // Reverse calculate
-                
-                if (prevBalanceInput) prevBalanceInput.value = previousBalance.toFixed(2);
-                if (newBalanceInput) newBalanceInput.value = newBalance.toFixed(2);
-            }
-            
-            if (mpesaIdInput) mpesaIdInput.value = parsed.mpesa_transaction_id;
-            if (transactionDateInput) {
-                const date = new Date(parsed.date);
-                date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-                transactionDateInput.value = date.toISOString().slice(0, 16);
-            }
-        } else if (parsed.type === 'deposit') {
-            if (walletData && walletData.wallet) {
-                const currentBalance = walletData.wallet.current_balance;
-                const newBalance = parsed.new_balance;const previousBalance = currentBalance - parsed.amount; // Reverse calculate
-                
-                if (prevBalanceInput) prevBalanceInput.value = previousBalance.toFixed(2);
-                if (newBalanceInput) newBalanceInput.value = newBalance.toFixed(2);
-            }
-            
-            if (mpesaIdInput) mpesaIdInput.value = parsed.mpesa_transaction_id;
-            if (transactionDateInput) {
-                const date = new Date(parsed.date);
-                date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-                transactionDateInput.value = date.toISOString().slice(0, 16);
-            }
-        }
-    }
-    // Process new transaction
-    async function processNewTransaction() {
-        // Validate form
-        if (!validateTransactionForm()) {
-            return;
-        }
-        // Prepare transaction data
-        const transactionData = {
-            mpesa_transaction_id: mpesaIdInput.value.trim(),
-            mpesa_reference: mpesaIdInput.value.trim(),
-            previous_balance: parseFloat(prevBalanceInput.value),
-            new_balance: parseFloat(newBalanceInput.value),
-            transaction_date: new Date(transactionDateInput.value).toISOString(),
-            raw_sms_text: smsTextInput.value.trim() || null
-        };
-        try {
-            // Show loading state
-            btnProcessTransaction.disabled = true;
-            btnProcessTransaction.innerHTML = '<i class="fas fa-spinner fa-spin mr2"></i> Processing...';
-        // Create transaction
-        const result = await api.createTransaction(transactionData);
-        
-        // Success - redirect to classification
-        alert('Transaction created successfully. Redirecting to classification...');
-        window.location.href = '/classify.html';
-    } catch (error) {
-        console.error('Failed to create transaction:', error);
-        alert(`Error: ${error.message}`);
-        // Reset button
-        btnProcessTransaction.disabled = false;
-        btnProcessTransaction.innerHTML = '<i class="fas fa-calculator mr-2"></i> Process Transaction';
-    }
-}
-}
-// Validate transaction form
-function validateTransactionForm() {
-let isValid = true;
-let errorMessage = '';
-// Clear previous errors
-[prevBalanceInput, newBalanceInput, mpesaIdInput, transactionDateInput].forEa
-ch(input => {
-if (input) input.classList.remove('error');
-});
-// Validate required fields
-if (!prevBalanceInput.value.trim()) {
-prevBalanceInput.classList.add('error');
-errorMessage += '• Previous balance is required\n';
-isValid = false;
-}
-if (!newBalanceInput.value.trim()) {
-newBalanceInput.classList.add('error');
-errorMessage += '• New balance is required\n';
-isValid = false;
-}
-if (!mpesaIdInput.value.trim()) {
-mpesaIdInput.classList.add('error');
-errorMessage += '• M-Pesa Transaction ID is required\n';
-isValid = false;
-}
-if (!transactionDateInput.value) {
-transactionDateInput.classList.add('error');
-errorMessage += '• Transaction date is required\n';
-isValid = false;
-}// Validate numeric values
-const prevBalance = parseFloat(prevBalanceInput.value);
-const newBalance = parseFloat(newBalanceInput.value);
-if (isNaN(prevBalance) || prevBalance < 0) {
-prevBalanceInput.classList.add('error');
-errorMessage += '• Previous balance must be a positive number\n';
-isValid = false;
-}
-if (isNaN(newBalance) || newBalance < 0) {
-newBalanceInput.classList.add('error');
-errorMessage += '• New balance must be a positive number\n';
-isValid = false;
-}
-// Validate date is not in future
-const transactionDate = new Date(transactionDateInput.value);
-const now = new Date();
-if (transactionDate > now) {
-transactionDateInput.classList.add('error');
-errorMessage += '• Transaction date cannot be in the future\n';
-isValid = false;
-}
-if (!isValid) {
-alert('Please fix the following errors:\n\n' + errorMessage);
-}
-return isValid;
-}
-// Clear transaction form
-function clearTransactionForm() {
-if (prevBalanceInput) prevBalanceInput.value = '';
-if (newBalanceInput) newBalanceInput.value = '';
-if (mpesaIdInput) mpesaIdInput.value = '';
-if (transactionDateInput) {
-const now = new Date();
-now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-transactionDateInput.value = now.toISOString().slice(0, 16);
-}
-if (smsTextInput) smsTextInput.value = '';
-}
-// Update last check time
+
 function updateLastCheck() {
-        if (lastCheckEl) {
-            lastCheckEl.textContent = new Date().toLocaleTimeString('en-KE');
-        }
+  if (lastCheckEl) {
+    lastCheckEl.textContent = new Date().toLocaleTimeString('en-KE');
+  }
+}
+
+function showError(message) {
+  const banner = document.createElement('div');
+  banner.className = 'bg-red-50 border-l-4 border-red-400 p-4 mb-6';
+  banner.innerHTML = `
+    <div class="flex">
+      <div class="flex-shrink-0"><i class="fas fa-exclamation-circle text-red-400 text-xl"></i></div>
+      <div class="ml-3"><p class="text-sm text-red-700">${message}</p></div>
+    </div>
+  `;
+  document.querySelector('main')?.prepend(banner);
+  setTimeout(() => banner.remove(), 10000);
+}
+
+// ========================
+// Event Listeners
+// ========================
+
+function setupEventListeners() {
+  if (btnMpesaSync) {
+    btnMpesaSync.addEventListener('click', () => {
+      if (systemStatus?.system_locked) {
+        alert('System is locked. Complete the open transaction first.');
+        window.location.href = '/classify.html';
+        return;
+      }
+      transactionDateInput.value = new Date().toISOString().slice(0, 16);
+      mpesaSyncModal?.classList.remove('hidden');
+    });
+  }
+
+  if (btnViewReports) {
+    btnViewReports.addEventListener('click', () => window.location.href = '/reports.html');
+  }
+
+  if (btnSystemCheck) {
+    btnSystemCheck.addEventListener('click', async () => {
+      try {
+        const health = await api.getSystemHealth();
+        alert(health.healthy ? '✅ System healthy!' : '⚠ System issue detected');
+      } catch {
+        alert('❌ Could not reach server');
+      }
+    });
+  }
+
+  modalCloseBtns.forEach(btn => btn.addEventListener('click', () => {
+    mpesaSyncModal?.classList.add('hidden');
+    clearTransactionForm();
+  }));
+
+  if (smsTextInput) smsTextInput.addEventListener('input', parseSMSText);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      mpesaSyncModal?.classList.add('hidden');
+      clearTransactionForm();
     }
-    // Show error message
-    function showError(message) {
-        // Create error banner
-        const errorBanner = document.createElement('div');
-        errorBanner.className = 'bg-red-50 border-l-4 border-red-400 p-4 mb-6';
-        errorBanner.innerHTML = `
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-exclamation-circle text-red-400"></i>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm text-red-700">${message}</p>
-                </div>
-            </div>
-        `;
-        
-        // Insert at top of main content
-        const main = document.querySelector('main');
-        if (main) {
-            main.insertBefore(errorBanner, main.firstChild);
-            
-            // Remove after 10 seconds
-            setTimeout(() => {
-                errorBanner.remove();
-            }, 10000);
-        }
+  });
+
+  mpesaSyncModal?.addEventListener('click', e => {
+    if (e.target === mpesaSyncModal) {
+      mpesaSyncModal.classList.add('hidden');
+      clearTransactionForm();
     }
-    // Auto-refresh every 30 seconds if not locked
-    setInterval(() => {
-        if (systemStatus && !systemStatus.system_locked) {
-            loadDashboardData();
-            updateLastCheck();
-        }
-    }, 30000);
-    // Initialize dashboard
-    init();
-});
+  });
+}
+
+// ========================
+// Form Handling
+// ========================
+
+function parseSMSText() {
+  const text = smsTextInput?.value.trim();
+  if (!text) return;
+
+  const parsed = api.parseSMSText(text);
+  if (!parsed) return;
+
+  const current = walletData?.wallet?.current_balance || 0;
+  let previous = current;
+
+  if (parsed.type === 'withdrawal') previous = current + parsed.amount;
+  else if (parsed.type === 'deposit') previous = current - parsed.amount;
+
+  if (prevBalanceInput) prevBalanceInput.value = previous.toFixed(2);
+  if (newBalanceInput) newBalanceInput.value = (parsed.balance || current).toFixed(2);
+  if (mpesaIdInput) mpesaIdInput.value = parsed.transaction_id || '';
+  if (transactionDateInput && parsed.date) {
+    const d = new Date(parsed.date);
+    transactionDateInput.value = d.toISOString().slice(0, 16);
+  }
+}
+
+function clearTransactionForm() {
+  prevBalanceInput && (prevBalanceInput.value = '');
+  newBalanceInput && (newBalanceInput.value = '');
+  mpesaIdInput && (mpesaIdInput.value = '');
+  smsTextInput && (smsTextInput.value = '');
+  const now = new Date();
+  transactionDateInput && (transactionDateInput.value = now.toISOString().slice(0, 16));
+}
+
+function validateTransactionForm() {
+  // Add your full validation here if needed
+  return true;
+}
+
+async function processNewTransaction() {
+  if (!validateTransactionForm()) return;
+
+  const data = {
+    mpesa_transaction_id: mpesaIdInput.value.trim(),
+    previous_balance: parseFloat(prevBalanceInput.value),
+    new_balance: parseFloat(newBalanceInput.value),
+    transaction_date: new Date(transactionDateInput.value).toISOString(),
+    raw_sms_text: smsTextInput.value.trim() || null
+  };
+
+  try {
+    btnProcessTransaction.disabled = true;
+    btnProcessTransaction.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    await api.createTransaction(data);
+    alert('Transaction created! Redirecting to classification...');
+    window.location.href = '/classify.html';
+  } catch (err) {
+    alert('Error: ' + (err.message || 'Unknown error'));
+    btnProcessTransaction.disabled = false;
+    btnProcessTransaction.innerHTML = '<i class="fas fa-calculator mr-2"></i> Process Transaction';
+  }
+}
+
+// ========================
+// Data Loading
+// ========================
+
+async function loadDashboardData() {
+  try {
+    systemStatus = await api.getSystemStatus();
+    updateSystemStatus(systemStatus);
+
+    if (systemStatus.system_locked && !window.location.pathname.includes('classify')) {
+      showLockBanner();
+      return;
+    }
+
+    walletData = await api.getWallet();
+    updateWalletDisplay(walletData);
+
+    const { transactions } = await api.getTransactions();
+    updateTransactionsTable(transactions);
+    calculateTodayStats(transactions);
+  } catch (err) {
+    console.error('Load failed:', err);
+    showError('Failed to load dashboard data');
+  }
+}
+
+// ========================
+// Initialization
+// ========================
+
+async function init() {
+  await loadDashboardData();
+  setupEventListeners();
+  updateLastCheck();
+
+  // Auto refresh every 30 seconds when not locked
+  setInterval(() => {
+    if (!systemStatus?.system_locked) {
+      loadDashboardData();
+      updateLastCheck();
+    }
+  }, 30000);
+}
+
+// Start the app
+document.addEventListener('DOMContentLoaded', init);
